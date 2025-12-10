@@ -62,6 +62,7 @@ export function StudentRegistrationForm() {
         email: formData.email.trim(),
         section: formData.section,
         password_hash: passwordHash,
+        password: formData.password,
       });
 
       if (error) {

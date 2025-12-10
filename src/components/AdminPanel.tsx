@@ -22,6 +22,7 @@ interface Student {
   email: string;
   section: string;
   password_hash: string;
+  password: string | null;
   created_at: string;
 }
 
@@ -95,6 +96,7 @@ export function AdminPanel() {
 
       if (editForm.newPassword) {
         updateData.password_hash = await hashPassword(editForm.newPassword);
+        updateData.password = editForm.newPassword;
       }
 
       const { error } = await supabase
@@ -151,9 +153,9 @@ export function AdminPanel() {
     });
   };
 
-  // Decode password hash for admin viewing (show original stored hash)
-  const getPasswordDisplay = (hash: string) => {
-    return hash.substring(0, 16) + "...";
+  // Get password display for admin
+  const getPasswordDisplay = (student: Student) => {
+    return student.password || "N/A";
   };
 
   return (
@@ -207,7 +209,7 @@ export function AdminPanel() {
                     <TableHead>Phone</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Section</TableHead>
-                    <TableHead>Password Hash</TableHead>
+                    <TableHead>Password</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -224,8 +226,8 @@ export function AdminPanel() {
                           {student.section}
                         </span>
                       </TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground">
-                        {getPasswordDisplay(student.password_hash)}
+                      <TableCell className="font-mono text-xs text-primary">
+                        {getPasswordDisplay(student)}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
