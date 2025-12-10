@@ -40,6 +40,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          password: string | null
           password_hash: string
           phone_number: string
           registration_number: string
@@ -52,6 +53,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
+          password?: string | null
           password_hash: string
           phone_number: string
           registration_number: string
@@ -64,6 +66,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          password?: string | null
           password_hash?: string
           phone_number?: string
           registration_number?: string
