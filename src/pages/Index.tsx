@@ -36,7 +36,7 @@ const Index = () => {
                 Welcome to <span className="gradient-text">Andhra University Site</span>
               </h1>
               <p className="mx-auto max-w-xl text-lg text-muted-foreground">Secure student data management portal. Register or login to access your information.
-Created By Author</p>
+ Created By AU Student </p>
             </div>
 
             {/* Tabs for Register/Login */}
