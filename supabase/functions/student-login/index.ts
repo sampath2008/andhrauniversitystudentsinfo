@@ -84,6 +84,29 @@ serve(async (req) => {
     crypto.getRandomValues(array);
     const sessionToken = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 
+    // Clear any existing sessions for this student
+    await supabase
+      .from('student_sessions')
+      .delete()
+      .eq('student_id', student.id);
+
+    // Store the session token in the database
+    const { error: sessionError } = await supabase
+      .from('student_sessions')
+      .insert({
+        student_id: student.id,
+        session_token: sessionToken,
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
+      });
+
+    if (sessionError) {
+      console.error('Failed to create session:', sessionError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to create session' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log(`Student ${student.student_name} logged in successfully`);
     
     return new Response(
