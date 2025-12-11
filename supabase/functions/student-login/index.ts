@@ -7,15 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Legacy hash function for migration (will be removed after all passwords are migrated)
-async function legacyHashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const salt = "au_site_salt_2024";
-  const data = encoder.encode(password + salt);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -54,22 +45,13 @@ serve(async (req) => {
     let passwordValid = false;
     const storedHash = student.password_hash;
     
+    // All passwords should now be bcrypt hashed
     if (storedHash.startsWith('$2')) {
-      // Bcrypt hash (using sync version as Workers not available in edge runtime)
       passwordValid = bcrypt.compareSync(password, storedHash);
     } else {
-      // Legacy SHA-256 hash - verify and migrate to bcrypt
-      const legacyHash = await legacyHashPassword(password);
-      if (legacyHash === storedHash) {
-        passwordValid = true;
-        // Migrate to bcrypt on successful login
-        const newHash = bcrypt.hashSync(password);
-        await supabase
-          .from('students')
-          .update({ password_hash: newHash })
-          .eq('id', student.id);
-        console.log(`Migrated password hash to bcrypt for student ${student.id}`);
-      }
+      // Legacy hashes are no longer supported
+      console.error(`Student ${student.id} has unsupported legacy hash format`);
+      passwordValid = false;
     }
     
     if (!passwordValid) {
