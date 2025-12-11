@@ -26,6 +26,37 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Validate session token - must belong to the claimed student and not be expired
+    const { data: session, error: sessionError } = await supabase
+      .from('student_sessions')
+      .select('student_id, expires_at')
+      .eq('session_token', sessionToken)
+      .eq('student_id', studentId)
+      .single();
+
+    if (sessionError || !session) {
+      console.log('Invalid session token for student:', studentId);
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired session' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if session has expired
+    if (new Date(session.expires_at) < new Date()) {
+      console.log('Session expired for student:', studentId);
+      // Clean up expired session
+      await supabase
+        .from('student_sessions')
+        .delete()
+        .eq('session_token', sessionToken);
+      
+      return new Response(
+        JSON.stringify({ error: 'Session expired, please login again' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Prepare update data - only allow specific fields
     const allowedFields = ['phone_number', 'email', 'password'];
     const updateData: Record<string, string> = {};
