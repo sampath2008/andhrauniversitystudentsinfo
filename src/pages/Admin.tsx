@@ -9,6 +9,7 @@ const Admin = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sessionToken, setSessionToken] = useState<string>("");
 
   useEffect(() => {
     const validateSession = async () => {
@@ -29,7 +30,7 @@ const Admin = () => {
           navigate("/admin-login");
           return;
         }
-
+        setSessionToken(token);
         setIsAuthenticated(true);
       } catch (error) {
         console.error('Session validation error:', error);
@@ -75,7 +76,7 @@ const Admin = () => {
       <Header isAdminLoggedIn onLogout={handleLogout} />
       
       <main className="container mx-auto px-4 pt-24 pb-16">
-        <AdminPanel />
+        <AdminPanel sessionToken={sessionToken} />
       </main>
 
       {/* Background Glow Effect */}

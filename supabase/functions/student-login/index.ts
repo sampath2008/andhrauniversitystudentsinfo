@@ -1,13 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Simple hash function for password verification
-async function hashPassword(password: string): Promise<string> {
+// Legacy hash function for migration (will be removed after all passwords are migrated)
+async function legacyHashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder();
   const salt = "au_site_salt_2024";
   const data = encoder.encode(password + salt);
@@ -49,9 +50,29 @@ serve(async (req) => {
       );
     }
 
-    // Verify password
-    const passwordHash = await hashPassword(password);
-    if (passwordHash !== student.password_hash) {
+    // Verify password - support both bcrypt and legacy hashes
+    let passwordValid = false;
+    const storedHash = student.password_hash;
+    
+    if (storedHash.startsWith('$2')) {
+      // Bcrypt hash
+      passwordValid = await bcrypt.compare(password, storedHash);
+    } else {
+      // Legacy SHA-256 hash - verify and migrate to bcrypt
+      const legacyHash = await legacyHashPassword(password);
+      if (legacyHash === storedHash) {
+        passwordValid = true;
+        // Migrate to bcrypt on successful login
+        const newHash = await bcrypt.hash(password);
+        await supabase
+          .from('students')
+          .update({ password_hash: newHash })
+          .eq('id', student.id);
+        console.log(`Migrated password hash to bcrypt for student ${student.id}`);
+      }
+    }
+    
+    if (!passwordValid) {
       return new Response(
         JSON.stringify({ error: 'Invalid credentials' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

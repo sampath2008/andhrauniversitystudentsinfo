@@ -8,7 +8,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { hashPassword } from "@/lib/password";
 import { RefreshCw, Download, Edit, Loader2, Users, Shield } from "lucide-react";
 
 const sections = ["A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10"];
@@ -26,7 +25,11 @@ interface Student {
   created_at: string;
 }
 
-export function AdminPanel() {
+interface AdminPanelProps {
+  sessionToken: string;
+}
+
+export function AdminPanel({ sessionToken }: AdminPanelProps) {
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<Student[]>([]);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
@@ -48,13 +51,14 @@ export function AdminPanel() {
   const fetchStudents = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("students")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.functions.invoke('admin-get-students', {
+        body: { sessionToken },
+      });
 
       if (error) throw error;
-      setStudents(data || []);
+      if (data?.error) throw new Error(data.error);
+      
+      setStudents(data?.students || []);
     } catch (error) {
       toast({
         title: "Error",
@@ -85,7 +89,7 @@ export function AdminPanel() {
 
     setSaving(true);
     try {
-      const updateData: Record<string, string> = {
+      const updates: Record<string, string> = {
         student_name: editForm.studentName.trim(),
         registration_number: editForm.registrationNumber.trim(),
         roll_number: editForm.rollNumber.trim(),
@@ -95,16 +99,15 @@ export function AdminPanel() {
       };
 
       if (editForm.newPassword) {
-        updateData.password_hash = await hashPassword(editForm.newPassword);
-        updateData.password = editForm.newPassword;
+        updates.new_password = editForm.newPassword;
       }
 
-      const { error } = await supabase
-        .from("students")
-        .update(updateData)
-        .eq("id", editingStudent.id);
+      const { data, error } = await supabase.functions.invoke('admin-update-student', {
+        body: { sessionToken, studentId: editingStudent.id, updates },
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: "Success",
