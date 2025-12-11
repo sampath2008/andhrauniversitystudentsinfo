@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { verifyPassword } from "@/lib/password";
 import { LogIn, Loader2 } from "lucide-react";
 import { z } from "zod";
 
@@ -15,7 +14,7 @@ const loginSchema = z.object({
 });
 
 interface StudentLoginFormProps {
-  onLogin: (studentId: string, registrationNumber: string) => void;
+  onLogin: (studentId: string, registrationNumber: string, sessionToken: string) => void;
 }
 
 export function StudentLoginForm({ onLogin }: StudentLoginFormProps) {
@@ -41,29 +40,17 @@ export function StudentLoginForm({ onLogin }: StudentLoginFormProps) {
     setLoading(true);
 
     try {
-      const { data: student, error } = await supabase
-        .from("students")
-        .select("id, password_hash, registration_number")
-        .eq("registration_number", formData.registrationNumber.trim())
-        .maybeSingle();
+      const { data, error } = await supabase.functions.invoke('student-login', {
+        body: { 
+          registration_number: formData.registrationNumber.trim(),
+          password: formData.password 
+        }
+      });
 
-      if (error) throw error;
-
-      if (!student) {
+      if (error || data?.error) {
         toast({
           title: "Login Failed",
-          description: "No student found with this registration number.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const isValid = await verifyPassword(formData.password, student.password_hash);
-
-      if (!isValid) {
-        toast({
-          title: "Login Failed",
-          description: "Incorrect password. Please try again.",
+          description: data?.error || "Invalid credentials. Please try again.",
           variant: "destructive",
         });
         return;
@@ -71,10 +58,10 @@ export function StudentLoginForm({ onLogin }: StudentLoginFormProps) {
 
       toast({
         title: "Login Successful!",
-        description: "Welcome to your student portal.",
+        description: `Welcome, ${data.studentName}!`,
       });
 
-      onLogin(student.id, student.registration_number);
+      onLogin(data.studentId, formData.registrationNumber.trim(), data.sessionToken);
 
     } catch (error) {
       toast({

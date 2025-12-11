@@ -2,17 +2,14 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { hashPassword } from "@/lib/password";
 import { User, Save, Loader2 } from "lucide-react";
-
-const sections = ["A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10"];
 
 interface StudentInfoPanelProps {
   studentId: string;
+  sessionToken: string;
 }
 
 interface StudentData {
@@ -25,16 +22,13 @@ interface StudentData {
   section: string;
 }
 
-export function StudentInfoPanel({ studentId }: StudentInfoPanelProps) {
+export function StudentInfoPanel({ studentId, sessionToken }: StudentInfoPanelProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [student, setStudent] = useState<StudentData | null>(null);
   const [formData, setFormData] = useState({
-    studentName: "",
-    rollNumber: "",
     phoneNumber: "",
     email: "",
-    section: "",
     newPassword: "",
   });
 
@@ -44,21 +38,18 @@ export function StudentInfoPanel({ studentId }: StudentInfoPanelProps) {
 
   const fetchStudentData = async () => {
     try {
-      const { data, error } = await supabase
-        .from("students")
-        .select("id, student_name, registration_number, roll_number, phone_number, email, section")
-        .eq("id", studentId)
-        .single();
+      const { data, error } = await supabase.functions.invoke('student-get-data', {
+        body: { studentId, sessionToken }
+      });
 
-      if (error) throw error;
+      if (error || data?.error) {
+        throw new Error(data?.error || 'Failed to load data');
+      }
 
-      setStudent(data);
+      setStudent(data.student);
       setFormData({
-        studentName: data.student_name,
-        rollNumber: data.roll_number,
-        phoneNumber: data.phone_number,
-        email: data.email,
-        section: data.section,
+        phoneNumber: data.student.phone_number,
+        email: data.student.email,
         newPassword: "",
       });
     } catch (error) {
@@ -77,12 +68,9 @@ export function StudentInfoPanel({ studentId }: StudentInfoPanelProps) {
     setSaving(true);
 
     try {
-      const updateData: Record<string, string> = {
-        student_name: formData.studentName.trim(),
-        roll_number: formData.rollNumber.trim(),
+      const updates: Record<string, string> = {
         phone_number: formData.phoneNumber.trim(),
         email: formData.email.trim(),
-        section: formData.section,
       };
 
       if (formData.newPassword) {
@@ -95,15 +83,16 @@ export function StudentInfoPanel({ studentId }: StudentInfoPanelProps) {
           setSaving(false);
           return;
         }
-        updateData.password_hash = await hashPassword(formData.newPassword);
+        updates.password = formData.newPassword;
       }
 
-      const { error } = await supabase
-        .from("students")
-        .update(updateData)
-        .eq("id", studentId);
+      const { data, error } = await supabase.functions.invoke('student-update-data', {
+        body: { studentId, sessionToken, updates }
+      });
 
-      if (error) throw error;
+      if (error || data?.error) {
+        throw new Error(data?.error || 'Failed to update');
+      }
 
       toast({
         title: "Success",
@@ -154,46 +143,24 @@ export function StudentInfoPanel({ studentId }: StudentInfoPanelProps) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSave} className="space-y-4">
+          {/* Read-only fields */}
           <div className="space-y-2">
-            <Label htmlFor="studentName">Student Name</Label>
-            <Input
-              id="studentName"
-              value={formData.studentName}
-              onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
-              required
-            />
+            <Label>Student Name</Label>
+            <Input value={student.student_name} disabled className="bg-muted" />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="rollNumber">Roll Number</Label>
-              <Input
-                id="rollNumber"
-                value={formData.rollNumber}
-                onChange={(e) => setFormData({ ...formData, rollNumber: e.target.value })}
-                required
-              />
+              <Label>Roll Number</Label>
+              <Input value={student.roll_number} disabled className="bg-muted" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="section">Section</Label>
-              <Select
-                value={formData.section}
-                onValueChange={(value) => setFormData({ ...formData, section: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select section" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sections.map((section) => (
-                    <SelectItem key={section} value={section}>
-                      {section}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Section</Label>
+              <Input value={student.section} disabled className="bg-muted" />
             </div>
           </div>
 
+          {/* Editable fields */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="phoneNumber">Phone Number</Label>
