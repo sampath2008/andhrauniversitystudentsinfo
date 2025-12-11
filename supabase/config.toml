@@ -1,1 +1,19 @@
 project_id = "lgvhgmiuyxbwfbcbzhdh"
+
+[functions.admin-login]
+verify_jwt = false
+
+[functions.admin-validate-session]
+verify_jwt = false
+
+[functions.admin-logout]
+verify_jwt = false
+
+[functions.student-login]
+verify_jwt = false
+
+[functions.student-get-data]
+verify_jwt = false
+
+[functions.student-update-data]
+verify_jwt = false

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { verifyAdminCredentials, generateSessionToken } from "@/lib/admin";
+import { supabase } from "@/integrations/supabase/client";
 import { Shield, Loader2 } from "lucide-react";
 
 const AdminLogin = () => {
@@ -21,23 +21,36 @@ const AdminLogin = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Small delay for UX
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    if (verifyAdminCredentials(formData.username, formData.password)) {
-      const token = generateSessionToken();
-      sessionStorage.setItem("adminToken", token);
-      
-      toast({
-        title: "Admin Login Successful",
-        description: "Welcome to the admin panel.",
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-login', {
+        body: { username: formData.username, password: formData.password }
       });
 
-      navigate("/admin");
-    } else {
+      if (error || data?.error) {
+        toast({
+          title: "Login Failed",
+          description: data?.error || "Invalid admin credentials.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (data?.sessionToken) {
+        sessionStorage.setItem("adminToken", data.sessionToken);
+        
+        toast({
+          title: "Admin Login Successful",
+          description: "Welcome to the admin panel.",
+        });
+
+        navigate("/admin");
+      }
+    } catch (error) {
+      console.error('Login error:', error);
       toast({
         title: "Login Failed",
-        description: "Invalid admin credentials.",
+        description: "An error occurred during login.",
         variant: "destructive",
       });
     }
