@@ -9,6 +9,12 @@ verify_jwt = false
 [functions.admin-logout]
 verify_jwt = false
 
+[functions.admin-get-students]
+verify_jwt = false
+
+[functions.admin-update-student]
+verify_jwt = false
+
 [functions.student-login]
 verify_jwt = false
 
@@ -16,4 +22,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.student-update-data]
+verify_jwt = false
+
+[functions.student-register]
 verify_jwt = false

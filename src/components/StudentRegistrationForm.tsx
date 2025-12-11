@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { hashPassword } from "@/lib/password";
 import { UserPlus, Loader2 } from "lucide-react";
 import { z } from "zod";
 
@@ -52,29 +51,26 @@ export function StudentRegistrationForm() {
     setLoading(true);
 
     try {
-      const passwordHash = await hashPassword(formData.password);
-
-      const { error } = await supabase.from("students").insert({
-        student_name: formData.studentName.trim(),
-        registration_number: formData.registrationNumber.trim(),
-        roll_number: formData.rollNumber.trim(),
-        phone_number: formData.phoneNumber.trim(),
-        email: formData.email.trim(),
-        section: formData.section,
-        password_hash: passwordHash,
-        password: formData.password,
+      const { data, error } = await supabase.functions.invoke('student-register', {
+        body: {
+          student_name: formData.studentName.trim(),
+          registration_number: formData.registrationNumber.trim(),
+          roll_number: formData.rollNumber.trim(),
+          phone_number: formData.phoneNumber.trim(),
+          email: formData.email.trim(),
+          section: formData.section,
+          password: formData.password,
+        },
       });
 
-      if (error) {
-        if (error.code === "23505") {
-          toast({
-            title: "Registration Failed",
-            description: "A student with this registration number already exists.",
-            variant: "destructive",
-          });
-        } else {
-          throw error;
-        }
+      if (error) throw error;
+
+      if (data?.error) {
+        toast({
+          title: "Registration Failed",
+          description: data.error,
+          variant: "destructive",
+        });
         return;
       }
 
