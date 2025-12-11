@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { RefreshCw, Download, Edit, Loader2, Users, Shield } from "lucide-react";
+import { RefreshCw, Download, Edit, Loader2, Users, Shield, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const sections = ["A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10"];
 
@@ -33,6 +34,7 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<Student[]>([]);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [deletingStudentId, setDeletingStudentId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState({
     studentName: "",
@@ -126,6 +128,34 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
       setSaving(false);
     }
   };
+
+  const handleDelete = async (studentId: string) => {
+    setDeletingStudentId(studentId);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-delete-student', {
+        body: { sessionToken, studentId },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: "Success",
+        description: "Student deleted successfully.",
+      });
+
+      fetchStudents();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete student.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingStudentId(null);
+    }
+  };
+
 
   const exportToExcel = () => {
     // Create CSV content (Excel compatible) - excluding passwords
@@ -233,15 +263,51 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
                         {getPasswordDisplay(student)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(student)}
-                          className="gap-1"
-                        >
-                          <Edit className="h-4 w-4" />
-                          Edit
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(student)}
+                            className="gap-1"
+                          >
+                            <Edit className="h-4 w-4" />
+                            Edit
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                disabled={deletingStudentId === student.id}
+                              >
+                                {deletingStudentId === student.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                                Delete
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-card">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Student</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete {student.student_name}? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(student.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

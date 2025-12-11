@@ -15,6 +15,9 @@ verify_jwt = false
 [functions.admin-update-student]
 verify_jwt = false
 
+[functions.admin-delete-student]
+verify_jwt = false
+
 [functions.student-login]
 verify_jwt = false
 
