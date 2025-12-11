@@ -34,7 +34,7 @@ const Index = () => {
               <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent animate-float">
                 <GraduationCap className="h-10 w-10 text-primary-foreground" />
               </div>
-              <h1 className="mb-4 text-4xl font-bold sm:text-5xl">Welcome to A Registration Site<span className="gradient-text">Andhra University Site</span>
+              <h1 className="mb-4 text-4xl font-bold sm:text-5xl">Welcome to AU Registration Site<span className="gradient-text">Andhra University Site</span>
               </h1>
               <p className="mx-auto max-w-xl text-lg text-muted-foreground">
                 Secure student data management portal. Register or login to access your information.
