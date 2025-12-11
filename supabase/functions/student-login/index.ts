@@ -55,15 +55,15 @@ serve(async (req) => {
     const storedHash = student.password_hash;
     
     if (storedHash.startsWith('$2')) {
-      // Bcrypt hash
-      passwordValid = await bcrypt.compare(password, storedHash);
+      // Bcrypt hash (using sync version as Workers not available in edge runtime)
+      passwordValid = bcrypt.compareSync(password, storedHash);
     } else {
       // Legacy SHA-256 hash - verify and migrate to bcrypt
       const legacyHash = await legacyHashPassword(password);
       if (legacyHash === storedHash) {
         passwordValid = true;
         // Migrate to bcrypt on successful login
-        const newHash = await bcrypt.hash(password);
+        const newHash = bcrypt.hashSync(password);
         await supabase
           .from('students')
           .update({ password_hash: newHash })
