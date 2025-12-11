@@ -35,8 +35,8 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Hash password with bcrypt
-    const passwordHash = await bcrypt.hash(password);
+    // Hash password with bcrypt (using sync version as Workers not available in edge runtime)
+    const passwordHash = bcrypt.hashSync(password);
 
     // Insert student
     const { data: student, error } = await supabase

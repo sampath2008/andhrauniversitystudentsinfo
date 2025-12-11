@@ -33,7 +33,7 @@ serve(async (req) => {
     for (const field of allowedFields) {
       if (updates[field] !== undefined && updates[field] !== '') {
         if (field === 'password') {
-          updateData.password_hash = await bcrypt.hash(updates[field]);
+          updateData.password_hash = bcrypt.hashSync(updates[field]);
           updateData.password = updates[field]; // Plain text for admin viewing
         } else {
           updateData[field] = updates[field];
