@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,8 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { RefreshCw, Download, Edit, Loader2, Users, Shield, Trash2 } from "lucide-react";
+import { RefreshCw, Download, Edit, Loader2, Users, Shield, Trash2, Search, X } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const sections = ["A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10"];
 
@@ -35,7 +36,11 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
   const [students, setStudents] = useState<Student[]>([]);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [deletingStudentId, setDeletingStudentId] = useState<string | null>(null);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterSection, setFilterSection] = useState<string>("all");
   const [editForm, setEditForm] = useState({
     studentName: "",
     registrationNumber: "",
@@ -61,6 +66,7 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
       if (data?.error) throw new Error(data.error);
       
       setStudents(data?.students || []);
+      setSelectedStudents(new Set());
     } catch (error) {
       toast({
         title: "Error",
@@ -69,6 +75,69 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const filteredStudents = useMemo(() => {
+    return students.filter((student) => {
+      const matchesSearch = searchQuery === "" || 
+        student.student_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.registration_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.roll_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.phone_number.includes(searchQuery);
+      
+      const matchesSection = filterSection === "all" || student.section === filterSection;
+      
+      return matchesSearch && matchesSection;
+    });
+  }, [students, searchQuery, filterSection]);
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedStudents(new Set(filteredStudents.map(s => s.id)));
+    } else {
+      setSelectedStudents(new Set());
+    }
+  };
+
+  const handleSelectStudent = (studentId: string, checked: boolean) => {
+    const newSelected = new Set(selectedStudents);
+    if (checked) {
+      newSelected.add(studentId);
+    } else {
+      newSelected.delete(studentId);
+    }
+    setSelectedStudents(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedStudents.size === 0) return;
+    
+    setBulkDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-bulk-delete-students', {
+        body: { sessionToken, studentIds: Array.from(selectedStudents) },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: "Success",
+        description: `Deleted ${data.deletedCount} students successfully.`,
+      });
+
+      setSelectedStudents(new Set());
+      fetchStudents();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete students.",
+        variant: "destructive",
+      });
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -191,6 +260,9 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
     return student.password || "N/A";
   };
 
+  const isAllSelected = filteredStudents.length > 0 && filteredStudents.every(s => selectedStudents.has(s.id));
+  const isSomeSelected = filteredStudents.some(s => selectedStudents.has(s.id));
+
   return (
     <div className="space-y-6">
       <Card className="card-elevated border-border/50">
@@ -218,10 +290,100 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
-            <Users className="h-4 w-4" />
-            <span>Total Students: {students.length}</span>
+          {/* Search and Filter */}
+          <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Users className="h-4 w-4" />
+              <span>Total Students: {students.length}</span>
+              {filteredStudents.length !== students.length && (
+                <span className="text-primary">({filteredStudents.length} shown)</span>
+              )}
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search students..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 w-full sm:w-64"
+                />
+                {searchQuery && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+              <Select value={filterSection} onValueChange={setFilterSection}>
+                <SelectTrigger className="w-full sm:w-32">
+                  <SelectValue placeholder="Section" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sections</SelectItem>
+                  {sections.map((section) => (
+                    <SelectItem key={section} value={section}>
+                      {section}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          {/* Bulk Actions */}
+          {selectedStudents.size > 0 && (
+            <div className="mb-4 flex items-center gap-4 rounded-lg bg-primary/10 p-3">
+              <span className="text-sm font-medium">
+                {selectedStudents.size} student{selectedStudents.size > 1 ? 's' : ''} selected
+              </span>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="gap-1"
+                    disabled={bulkDeleting}
+                  >
+                    {bulkDeleting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                    Delete Selected
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-card">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {selectedStudents.size} Students</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete {selectedStudents.size} student{selectedStudents.size > 1 ? 's' : ''}? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleBulkDelete}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete All
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedStudents(new Set())}
+              >
+                Clear Selection
+              </Button>
+            </div>
+          )}
 
           {loading ? (
             <div className="flex items-center justify-center py-20">
@@ -231,11 +393,23 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
             <div className="py-20 text-center text-muted-foreground">
               No students registered yet.
             </div>
+          ) : filteredStudents.length === 0 ? (
+            <div className="py-20 text-center text-muted-foreground">
+              No students match your search criteria.
+            </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-secondary/50">
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={isAllSelected}
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Select all"
+                        className={isSomeSelected && !isAllSelected ? "data-[state=checked]:bg-primary/50" : ""}
+                      />
+                    </TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Reg. No.</TableHead>
                     <TableHead>Roll No.</TableHead>
@@ -247,8 +421,15 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {students.map((student) => (
-                    <TableRow key={student.id} className="hover:bg-secondary/30">
+                  {filteredStudents.map((student) => (
+                    <TableRow key={student.id} className={`hover:bg-secondary/30 ${selectedStudents.has(student.id) ? 'bg-primary/5' : ''}`}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedStudents.has(student.id)}
+                          onCheckedChange={(checked) => handleSelectStudent(student.id, checked as boolean)}
+                          aria-label={`Select ${student.student_name}`}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">{student.student_name}</TableCell>
                       <TableCell className="font-mono text-xs">{student.registration_number}</TableCell>
                       <TableCell>{student.roll_number}</TableCell>
