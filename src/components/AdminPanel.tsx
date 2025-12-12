@@ -8,9 +8,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { RefreshCw, Download, Edit, Loader2, Users, Shield, Trash2, Search, X, Eye, EyeOff } from "lucide-react";
+import { RefreshCw, Download, Edit, Loader2, Users, Shield, Trash2, Search, X, Eye, EyeOff, ChevronLeft, ChevronRight } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+
+const ITEMS_PER_PAGE = 10;
 
 const sections = ["A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10"];
 
@@ -42,6 +44,7 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSection, setFilterSection] = useState<string>("all");
   const [showPasswords, setShowPasswords] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const [editForm, setEditForm] = useState({
     studentName: "",
     registrationNumber: "",
@@ -93,6 +96,18 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
       return matchesSearch && matchesSection;
     });
   }, [students, searchQuery, filterSection]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredStudents.length / ITEMS_PER_PAGE);
+  const paginatedStudents = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredStudents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredStudents, currentPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterSection]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -400,7 +415,8 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
               No students match your search criteria.
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-border">
+            <>
+              <div className="overflow-x-auto rounded-lg border border-border">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-secondary/50">
@@ -439,7 +455,7 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredStudents.map((student) => (
+                  {paginatedStudents.map((student) => (
                     <TableRow key={student.id} className={`hover:bg-secondary/30 ${selectedStudents.has(student.id) ? 'bg-primary/5' : ''}`}>
                       <TableCell>
                         <Checkbox
@@ -513,7 +529,64 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
                 </TableBody>
               </Table>
             </div>
-          )}
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-4 flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredStudents.length)} of {filteredStudents.length} students
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="gap-1"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "ghost"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className="h-8 w-8 p-0"
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="gap-1"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
         </CardContent>
       </Card>
 
