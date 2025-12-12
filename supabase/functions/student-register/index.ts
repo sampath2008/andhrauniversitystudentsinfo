@@ -35,6 +35,48 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Check if registration number already exists
+    const { data: existingRegNum } = await supabase
+      .from('students')
+      .select('id')
+      .eq('registration_number', registration_number.trim())
+      .maybeSingle();
+
+    if (existingRegNum) {
+      return new Response(
+        JSON.stringify({ error: 'This registration number is already registered. Please enter a correct registration number.' }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if email already exists
+    const { data: existingEmail } = await supabase
+      .from('students')
+      .select('id')
+      .eq('email', email.trim())
+      .maybeSingle();
+
+    if (existingEmail) {
+      return new Response(
+        JSON.stringify({ error: 'This email is already registered. Please use a different email address.' }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if phone number already exists
+    const { data: existingPhone } = await supabase
+      .from('students')
+      .select('id')
+      .eq('phone_number', phone_number.trim())
+      .maybeSingle();
+
+    if (existingPhone) {
+      return new Response(
+        JSON.stringify({ error: 'This phone number is already registered. Please use a different phone number.' }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Hash password with bcrypt (using sync version as Workers not available in edge runtime)
     const passwordHash = bcrypt.hashSync(password);
 
@@ -56,14 +98,8 @@ serve(async (req) => {
 
     if (error) {
       console.error('Registration error:', error);
-      if (error.code === '23505') {
-        return new Response(
-          JSON.stringify({ error: 'A student with this registration number already exists' }),
-          { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
       return new Response(
-        JSON.stringify({ error: 'Registration failed' }),
+        JSON.stringify({ error: 'Registration failed. Please try again.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
