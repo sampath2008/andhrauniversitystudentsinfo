@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { RefreshCw, Download, Edit, Loader2, Users, Shield, Trash2, Search, X } from "lucide-react";
+import { RefreshCw, Download, Edit, Loader2, Users, Shield, Trash2, Search, X, Eye, EyeOff } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -41,6 +41,7 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSection, setFilterSection] = useState<string>("all");
+  const [showPasswords, setShowPasswords] = useState(false);
   const [editForm, setEditForm] = useState({
     studentName: "",
     registrationNumber: "",
@@ -257,7 +258,8 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
 
   // Get password display for admin
   const getPasswordDisplay = (student: Student) => {
-    return student.password || "N/A";
+    if (!student.password) return "N/A";
+    return showPasswords ? student.password : "••••••••";
   };
 
   const isAllSelected = filteredStudents.length > 0 && filteredStudents.every(s => selectedStudents.has(s.id));
@@ -416,7 +418,23 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
                     <TableHead>Phone</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Section</TableHead>
-                    <TableHead>Password</TableHead>
+                    <TableHead>
+                      <div className="flex items-center gap-2">
+                        Password
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => setShowPasswords(!showPasswords)}
+                        >
+                          {showPasswords ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
