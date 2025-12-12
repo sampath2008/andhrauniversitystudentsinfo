@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,10 +7,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { UserPlus, Loader2 } from "lucide-react";
+import { UserPlus, Loader2, Check, X } from "lucide-react";
 import { z } from "zod";
+import { Progress } from "@/components/ui/progress";
 
 const sections = ["A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10"];
+
+// Password strength validation
+const passwordStrengthChecks = [
+  { label: "At least 8 characters", test: (p: string) => p.length >= 8 },
+  { label: "Contains uppercase letter", test: (p: string) => /[A-Z]/.test(p) },
+  { label: "Contains lowercase letter", test: (p: string) => /[a-z]/.test(p) },
+  { label: "Contains number", test: (p: string) => /[0-9]/.test(p) },
+  { label: "Contains special character", test: (p: string) => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
+];
 
 const registrationSchema = z.object({
   studentName: z.string().trim().min(1, "Student name is required").max(100),
@@ -19,7 +29,12 @@ const registrationSchema = z.object({
   phoneNumber: z.string().trim().min(10, "Valid phone number required").max(15),
   email: z.string().trim().email("Valid email is required").max(255),
   section: z.enum(["A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10"]),
-  password: z.string().min(6, "Password must be at least 6 characters").max(100),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .max(100)
+    .refine((p) => /[A-Z]/.test(p), "Password must contain an uppercase letter")
+    .refine((p) => /[a-z]/.test(p), "Password must contain a lowercase letter")
+    .refine((p) => /[0-9]/.test(p), "Password must contain a number"),
 });
 
 export function StudentRegistrationForm() {
@@ -34,6 +49,33 @@ export function StudentRegistrationForm() {
     section: "",
     password: "",
   });
+
+  const passwordStrength = useMemo(() => {
+    const passedChecks = passwordStrengthChecks.filter(check => check.test(formData.password));
+    return {
+      score: passedChecks.length,
+      checks: passwordStrengthChecks.map(check => ({
+        ...check,
+        passed: check.test(formData.password),
+      })),
+    };
+  }, [formData.password]);
+
+  const getStrengthColor = (score: number) => {
+    if (score <= 1) return "bg-destructive";
+    if (score <= 2) return "bg-orange-500";
+    if (score <= 3) return "bg-yellow-500";
+    if (score <= 4) return "bg-lime-500";
+    return "bg-green-500";
+  };
+
+  const getStrengthLabel = (score: number) => {
+    if (score <= 1) return "Very Weak";
+    if (score <= 2) return "Weak";
+    if (score <= 3) return "Fair";
+    if (score <= 4) return "Good";
+    return "Strong";
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,12 +236,41 @@ export function StudentRegistrationForm() {
             <Input
               id="password"
               type="password"
-              placeholder="Create a password (min 6 characters)"
+              placeholder="Create a strong password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
-              minLength={6}
+              minLength={8}
             />
+            
+            {/* Password Strength Indicator */}
+            {formData.password && (
+              <div className="space-y-2 mt-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Password strength:</span>
+                  <span className={`font-medium ${passwordStrength.score >= 4 ? 'text-green-500' : passwordStrength.score >= 3 ? 'text-yellow-500' : 'text-destructive'}`}>
+                    {getStrengthLabel(passwordStrength.score)}
+                  </span>
+                </div>
+                <Progress 
+                  value={(passwordStrength.score / 5) * 100} 
+                  className="h-1.5"
+                  indicatorClassName={getStrengthColor(passwordStrength.score)}
+                />
+                <ul className="space-y-1 mt-2">
+                  {passwordStrength.checks.map((check, i) => (
+                    <li key={i} className={`flex items-center gap-2 text-xs ${check.passed ? 'text-green-500' : 'text-muted-foreground'}`}>
+                      {check.passed ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <X className="h-3 w-3" />
+                      )}
+                      {check.label}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           <Button type="submit" className="w-full" variant="gradient" size="lg" disabled={loading}>
