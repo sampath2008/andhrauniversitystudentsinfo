@@ -56,9 +56,9 @@ serve(async (req) => {
       if (updateData[key] === undefined) delete updateData[key];
     });
 
-    // Handle password update with bcrypt
+    // Handle password update with bcrypt (using sync version as Workers not available in edge runtime)
     if (updates.new_password) {
-      updateData.password_hash = await bcrypt.hash(updates.new_password);
+      updateData.password_hash = bcrypt.hashSync(updates.new_password);
       updateData.password = updates.new_password; // Plain text for admin viewing
     }
 
