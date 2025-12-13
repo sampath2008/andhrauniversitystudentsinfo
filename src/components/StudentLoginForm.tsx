@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,11 @@ const loginSchema = z.object({
 interface StudentLoginFormProps {
   onLogin: (studentId: string, registrationNumber: string, sessionToken: string) => void;
 }
+
+const inputVariants = {
+  focus: { scale: 1.02, transition: { duration: 0.2 } },
+  blur: { scale: 1, transition: { duration: 0.2 } },
+};
 
 export function StudentLoginForm({ onLogin }: StudentLoginFormProps) {
   const [loading, setLoading] = useState(false);
@@ -75,54 +81,97 @@ export function StudentLoginForm({ onLogin }: StudentLoginFormProps) {
   };
 
   return (
-    <Card className="w-full max-w-md card-elevated border-border/50 animate-fade-in">
-      <CardHeader className="text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent">
-          <LogIn className="h-7 w-7 text-primary-foreground" />
-        </div>
-        <CardTitle className="text-2xl">Student Login</CardTitle>
-        <CardDescription>Access your student information</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="registrationNumber">Registration Number</Label>
-            <Input
-              id="registrationNumber"
-              placeholder="Enter your registration number"
-              value={formData.registrationNumber}
-              onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value })}
-              required
-            />
-          </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+    >
+      <Card className="w-full max-w-md card-elevated border-border/50 glow-border overflow-hidden">
+        <CardHeader className="text-center relative">
+          <motion.div
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
+            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent shadow-lg"
+          >
+            <LogIn className="h-7 w-7 text-primary-foreground" />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <CardTitle className="text-2xl">Student Login</CardTitle>
+            <CardDescription>Access your student information</CardDescription>
+          </motion.div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+              className="space-y-2"
+            >
+              <Label htmlFor="registrationNumber">Registration Number</Label>
+              <motion.div whileFocus="focus" variants={inputVariants}>
+                <Input
+                  id="registrationNumber"
+                  placeholder="Enter your registration number"
+                  value={formData.registrationNumber}
+                  onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value })}
+                  required
+                  className="transition-all duration-300 focus:ring-2 focus:ring-primary/20"
+                />
+              </motion.div>
+            </motion.div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              required
-            />
-          </div>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+              className="space-y-2"
+            >
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+                className="transition-all duration-300 focus:ring-2 focus:ring-primary/20"
+              />
+            </motion.div>
 
-          <Button type="submit" className="w-full" variant="gradient" size="lg" disabled={loading}>
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Logging in...
-              </>
-            ) : (
-              <>
-                <LogIn className="h-4 w-4" />
-                Login
-              </>
-            )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Button 
+                type="submit" 
+                className="w-full btn-ripple" 
+                variant="gradient" 
+                size="lg" 
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Logging in...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="h-4 w-4" />
+                    Login
+                  </>
+                )}
+              </Button>
+            </motion.div>
+          </form>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
