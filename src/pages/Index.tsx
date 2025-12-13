@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
+import { PageTransition } from "@/components/PageTransition";
 import { StudentRegistrationForm } from "@/components/StudentRegistrationForm";
 import { StudentLoginForm } from "@/components/StudentLoginForm";
 import { StudentInfoPanel } from "@/components/StudentInfoPanel";
@@ -69,8 +70,9 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
-      <Header isStudentLoggedIn={!!loggedInStudent} onLogout={handleLogout} />
+    <PageTransition>
+      <div className="min-h-screen bg-background overflow-hidden">
+        <Header isStudentLoggedIn={!!loggedInStudent} onLogout={handleLogout} />
       
       <main className="container mx-auto px-4 pt-24 pb-16">
         <AnimatePresence mode="wait">
@@ -214,6 +216,7 @@ const Index = () => {
         </div>
       </main>
     </div>
+    </PageTransition>
   );
 };
 
