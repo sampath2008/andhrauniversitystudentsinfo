@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,19 @@ interface StudentData {
   email: string;
   section: string;
 }
+
+const fieldVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.1,
+      duration: 0.4,
+      ease: "easeOut" as const,
+    },
+  }),
+};
 
 export function StudentInfoPanel({ studentId, sessionToken }: StudentInfoPanelProps) {
   const [loading, setLoading] = useState(true);
@@ -114,102 +128,173 @@ export function StudentInfoPanel({ studentId, sessionToken }: StudentInfoPanelPr
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center justify-center py-20"
+      >
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        >
+          <Loader2 className="h-8 w-8 text-primary" />
+        </motion.div>
+      </motion.div>
     );
   }
 
   if (!student) {
     return (
-      <Card className="card-elevated border-border/50">
-        <CardContent className="py-10 text-center">
-          <p className="text-muted-foreground">Student data not found.</p>
-        </CardContent>
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+      >
+        <Card className="card-elevated border-border/50">
+          <CardContent className="py-10 text-center">
+            <p className="text-muted-foreground">Student data not found.</p>
+          </CardContent>
+        </Card>
+      </motion.div>
     );
   }
 
   return (
-    <Card className="w-full max-w-2xl card-elevated border-border/50 animate-fade-in">
-      <CardHeader className="text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent">
-          <User className="h-7 w-7 text-primary-foreground" />
-        </div>
-        <CardTitle className="text-2xl">Student Info</CardTitle>
-        <CardDescription>
-          Registration Number: <span className="font-mono text-primary">{student.registration_number}</span>
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSave} className="space-y-4">
-          {/* Read-only fields */}
-          <div className="space-y-2">
-            <Label>Student Name</Label>
-            <Input value={student.student_name} disabled className="bg-muted" />
-          </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+    >
+      <Card className="w-full max-w-2xl card-elevated border-border/50 glow-border overflow-hidden">
+        <CardHeader className="text-center">
+          <motion.div
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
+            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent shadow-lg"
+          >
+            <User className="h-7 w-7 text-primary-foreground" />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <CardTitle className="text-2xl">Student Info</CardTitle>
+            <CardDescription>
+              Registration Number: <span className="font-mono text-primary">{student.registration_number}</span>
+            </CardDescription>
+          </motion.div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSave} className="space-y-4">
+            {/* Read-only fields */}
+            <motion.div
+              custom={0}
+              variants={fieldVariants}
+              initial="hidden"
+              animate="visible"
+              className="space-y-2"
+            >
+              <Label>Student Name</Label>
+              <Input value={student.student_name} disabled className="bg-muted" />
+            </motion.div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Roll Number</Label>
-              <Input value={student.roll_number} disabled className="bg-muted" />
-            </div>
-            <div className="space-y-2">
-              <Label>Section</Label>
-              <Input value={student.section} disabled className="bg-muted" />
-            </div>
-          </div>
+            <motion.div
+              custom={1}
+              variants={fieldVariants}
+              initial="hidden"
+              animate="visible"
+              className="grid gap-4 sm:grid-cols-2"
+            >
+              <div className="space-y-2">
+                <Label>Roll Number</Label>
+                <Input value={student.roll_number} disabled className="bg-muted" />
+              </div>
+              <div className="space-y-2">
+                <Label>Section</Label>
+                <Input value={student.section} disabled className="bg-muted" />
+              </div>
+            </motion.div>
 
-          {/* Editable fields */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Phone Number</Label>
+            {/* Editable fields */}
+            <motion.div
+              custom={2}
+              variants={fieldVariants}
+              initial="hidden"
+              animate="visible"
+              className="grid gap-4 sm:grid-cols-2"
+            >
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber">Phone Number</Label>
+                <Input
+                  id="phoneNumber"
+                  type="tel"
+                  value={formData.phoneNumber}
+                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                  required
+                  className="transition-all duration-300 focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                  className="transition-all duration-300 focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+            </motion.div>
+
+            <motion.div
+              custom={3}
+              variants={fieldVariants}
+              initial="hidden"
+              animate="visible"
+              className="space-y-2"
+            >
+              <Label htmlFor="newPassword">New Password (leave blank to keep current)</Label>
               <Input
-                id="phoneNumber"
-                type="tel"
-                value={formData.phoneNumber}
-                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                required
+                id="newPassword"
+                type="password"
+                placeholder="Enter new password"
+                value={formData.newPassword}
+                onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                className="transition-all duration-300 focus:ring-2 focus:ring-primary/20"
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
-            </div>
-          </div>
+            </motion.div>
 
-          <div className="space-y-2">
-            <Label htmlFor="newPassword">New Password (leave blank to keep current)</Label>
-            <Input
-              id="newPassword"
-              type="password"
-              placeholder="Enter new password"
-              value={formData.newPassword}
-              onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-            />
-          </div>
-
-          <Button type="submit" className="w-full" variant="gradient" size="lg" disabled={saving}>
-            {saving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4" />
-                Save Changes
-              </>
-            )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+            <motion.div
+              custom={4}
+              variants={fieldVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              <Button 
+                type="submit" 
+                className="w-full btn-ripple" 
+                variant="gradient" 
+                size="lg" 
+                disabled={saving}
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </motion.div>
+          </form>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
