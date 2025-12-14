@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { RefreshCw, Download, Edit, Loader2, Users, Shield, Trash2, Search, X, Eye, EyeOff, ChevronLeft, ChevronRight } from "lucide-react";
+import { RefreshCw, Download, Edit, Users, Shield, Trash2, Search, X, Eye, EyeOff, ChevronLeft, ChevronRight } from "lucide-react";
+import { SpinLoader } from "@/components/ui/spin-loader";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -367,7 +368,7 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
                     disabled={bulkDeleting}
                   >
                     {bulkDeleting ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <SpinLoader size="sm" />
                     ) : (
                       <Trash2 className="h-4 w-4" />
                     )}
@@ -404,7 +405,7 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
 
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <SpinLoader size="lg" className="text-primary" />
             </div>
           ) : students.length === 0 ? (
             <div className="py-20 text-center text-muted-foreground">
@@ -497,7 +498,7 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
                                 disabled={deletingStudentId === student.id}
                               >
                                 {deletingStudentId === student.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  <SpinLoader size="sm" />
                                 ) : (
                                   <Trash2 className="h-4 w-4" />
                                 )}
@@ -689,7 +690,7 @@ export function AdminPanel({ sessionToken }: AdminPanelProps) {
               <Button type="submit" variant="gradient" disabled={saving}>
                 {saving ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <SpinLoader size="sm" />
                     Saving...
                   </>
                 ) : (

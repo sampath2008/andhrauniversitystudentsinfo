@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { LogIn, Loader2 } from "lucide-react";
+import { LogIn } from "lucide-react";
+import { SpinLoader } from "@/components/ui/spin-loader";
 import { z } from "zod";
 
 const loginSchema = z.object({
@@ -86,7 +87,7 @@ export function StudentLoginForm({ onLogin }: StudentLoginFormProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
     >
-      <Card className="w-full max-w-md card-elevated border-border/50 glow-border overflow-hidden">
+      <Card className="w-full max-w-md card-elevated border-border/50 overflow-hidden">
         <CardHeader className="text-center relative">
           <motion.div
             initial={{ scale: 0, rotate: -180 }}
@@ -158,7 +159,7 @@ export function StudentLoginForm({ onLogin }: StudentLoginFormProps) {
               >
                 {loading ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <SpinLoader size="sm" />
                     Logging in...
                   </>
                 ) : (

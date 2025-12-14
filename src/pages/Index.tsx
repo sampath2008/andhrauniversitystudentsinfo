@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { PageTransition } from "@/components/PageTransition";
 import { StudentRegistrationForm } from "@/components/StudentRegistrationForm";
 import { StudentLoginForm } from "@/components/StudentLoginForm";
@@ -109,7 +110,7 @@ const Index = () => {
                 <motion.div
                   variants={floatVariants}
                   animate="animate"
-                  className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg glow-border"
+                  className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent shadow-lg"
                 >
                   <motion.div variants={pulseVariants} animate="animate">
                     <GraduationCap className="h-10 w-10 text-primary-foreground icon-glow" />
@@ -186,35 +187,8 @@ const Index = () => {
           )}
         </AnimatePresence>
 
-        {/* Animated Background Effects */}
-        <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-          <motion.div
-            animate={{
-              x: [0, 30, 0],
-              y: [0, -20, 0],
-              scale: [1, 1.1, 1],
-            }}
-            transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-1/4 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full bg-primary/10 blur-3xl"
-          />
-          <motion.div
-            animate={{
-              x: [0, -20, 0],
-              y: [0, 30, 0],
-              scale: [1, 0.9, 1],
-            }}
-            transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-            className="absolute bottom-1/4 right-1/4 h-64 w-64 rounded-full bg-accent/10 blur-3xl"
-          />
-          <motion.div
-            animate={{
-              opacity: [0.3, 0.6, 0.3],
-            }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-1/2 left-1/4 h-32 w-32 rounded-full bg-primary/5 blur-2xl"
-          />
-        </div>
       </main>
+      <Footer />
     </div>
     </PageTransition>
   );

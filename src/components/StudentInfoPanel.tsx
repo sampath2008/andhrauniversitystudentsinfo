@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Save, Loader2 } from "lucide-react";
+import { User, Save } from "lucide-react";
+import { SpinLoader } from "@/components/ui/spin-loader";
 
 interface StudentInfoPanelProps {
   studentId: string;
@@ -133,12 +134,7 @@ export function StudentInfoPanel({ studentId, sessionToken }: StudentInfoPanelPr
         animate={{ opacity: 1 }}
         className="flex items-center justify-center py-20"
       >
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        >
-          <Loader2 className="h-8 w-8 text-primary" />
-        </motion.div>
+        <SpinLoader size="lg" className="text-primary" />
       </motion.div>
     );
   }
@@ -164,7 +160,7 @@ export function StudentInfoPanel({ studentId, sessionToken }: StudentInfoPanelPr
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
     >
-      <Card className="w-full max-w-2xl card-elevated border-border/50 glow-border overflow-hidden">
+      <Card className="w-full max-w-2xl card-elevated border-border/50 overflow-hidden">
         <CardHeader className="text-center">
           <motion.div
             initial={{ scale: 0, rotate: -180 }}
@@ -281,7 +277,7 @@ export function StudentInfoPanel({ studentId, sessionToken }: StudentInfoPanelPr
               >
                 {saving ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <SpinLoader size="sm" />
                     Saving...
                   </>
                 ) : (
