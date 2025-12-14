@@ -332,4 +332,14 @@
     opacity: 1;
     transition: none;
   }
+
+  /* Sit 'n Spin loader */
+  .animate-spin-loader {
+    animation: spinLoader 0.8s linear infinite;
+  }
+
+  @keyframes spinLoader {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
 }
